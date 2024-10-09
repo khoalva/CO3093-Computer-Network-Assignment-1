@@ -69,6 +69,6 @@ class TrackerServer:
                     del self.peers[file_id]
             print(f"Peer removed: {ip}:{port} for fileID {file_id}")
 
-
-tracker = TrackerServer(host='localhost', port= 5000)
-tracker.start()
+if __name__ == "__main__":
+    tracker = TrackerServer(host='localhost', port= 5000)
+    tracker.start()
