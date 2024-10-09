@@ -3,7 +3,7 @@ import os
 import socket
 from FileHandler import FileHandler
 from TrackerServer import TrackerServer
-TRACKER_HOST = 'localhost'
+TRACKER_HOST = '192.168.1.8'
 TRACKER_PORT = 5000
 
 class Peer:
