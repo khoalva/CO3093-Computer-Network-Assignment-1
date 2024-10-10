@@ -2,23 +2,27 @@ import socket
 import threading
 from typing import Dict, List
 
+SERVER_MASK = '0.0.0.0'
+SERVER_PORT = 5050
+
 class TrackerServer:
-    def __init__(self, host: str, port: int):
-        self.host = host  # Địa chỉ IP của Tracker Server
-        self.port = port  # Cổng của Tracker Server
+    def __init__(self):
         self.peers: Dict[str, List[Dict[str, int]]] = {}  # Lưu thông tin về các peer theo fileID
         self.lock = threading.Lock()  # Để đảm bảo thread-safe khi có nhiều kết nối đồng thời
-
+        self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.server_socket.bind((SERVER_MASK, SERVER_PORT))
     def start(self):
         """Khởi động server và bắt đầu lắng nghe các kết nối."""
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server_socket:
-            server_socket.bind((self.host, self.port))
-            server_socket.listen(5)
-            print(f"Tracker server is running on {self.host}:{self.port}")
-            while True:
-                client_socket, addr = server_socket.accept()
-                print(f"Connection from {addr}")
-                threading.Thread(target=self.handle_client, args=(client_socket,)).start()
+
+        self.server_socket.listen(5)
+        print(f"Tracker server is running...")
+        while True:
+            client_socket, addr = self.server_socket.accept()
+            print(f"Connection from {addr}")
+            threading.Thread(target=self.handle_client, args=(client_socket,)).start()
+
+    def close(self):
+        self.server_socket.close()
 
     def handle_client(self, client_socket: socket.socket):
         """Xử lý các yêu cầu từ client."""
@@ -70,5 +74,5 @@ class TrackerServer:
             print(f"Peer removed: {ip}:{port} for fileID {file_id}")
 
 if __name__ == "__main__":
-    tracker = TrackerServer(host='localhost', port= 5000)
+    tracker = TrackerServer()
     tracker.start()

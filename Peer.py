@@ -3,8 +3,8 @@ import os
 import socket
 from FileHandler import FileHandler
 from TrackerServer import TrackerServer
-TRACKER_HOST = '192.168.1.8'
-TRACKER_PORT = 5000
+TRACKER_HOST = '20.2.250.184'
+TRACKER_PORT = 5050
 
 class Peer:
     def __init__(self, peer_host, peer_port):
@@ -63,9 +63,7 @@ class Peer:
 
     def share_file(self, file: FileHandler):
         """Bắt đầu chia sẻ file và mở server nếu cần."""
-        # Tính toán hash của file và chia nhỏ file thành các chunks
-        self.sharedFiles[file.fileID] = self.split_file_into_chunks(file.filePath)
-        
+
         # Khởi động server P2P nếu chưa chạy
         self.start_peer_server()
 
@@ -134,15 +132,6 @@ class Peer:
             chunk_data = f"chunk_data_{chunk_num}".encode()
             self.sharedFiles[fileID][chunk_num] = chunk_data
             print(f"Downloaded chunk {chunk_num} of file {fileID} from peer {peer}.")
-
-    def split_file_into_chunks(self, file_path: str):
-        """Chia file thành các chunks để chia sẻ (giả lập)."""
-        # Giả lập tách file thành các chunk, có thể lưu vào dict.
-        return {
-            0: b"chunk_data_1", 
-            1: b"chunk_data_2", 
-            2: b"chunk_data_3"
-        }
 
     def verify_file_integrity(self, fileID: str):
         """Giả lập kiểm tra tính toàn vẹn của file sau khi tải xong."""
