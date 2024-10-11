@@ -12,7 +12,7 @@ def app():
         user.upload_file(filePath=filePath)
     else:
         fileID = input('ID: ')
-        total_chunks = input('Chunks: ')
+        total_chunks = int(input('Chunks: '))
         user.download_file(fileID, total_chunks)
 
 app()

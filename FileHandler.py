@@ -34,6 +34,8 @@ class FileChunk:
         :return: The size of the chunk.
         """
         return len(self.data)
+    def to_bytes(self):
+        return bytes(self.data)
 
 
 class FileHandler:
