@@ -29,9 +29,9 @@ class TrackerServer:
         try:
             request = client_socket.recv(1024).decode('utf-8')
             if request.startswith("POST"):
-                _, file_id, ip, port = request.split()
+                _, file_id, totalChunks, ip, port = request.split()
                 self.register_peer(file_id, ip, int(port))
-                response = f"Post peer {ip}:{port} for fileID {file_id}"
+                response = f"Post peer {ip}:{port} for fileID {file_id} TotalChunks {totalChunks}"
                 client_socket.send(response.encode('utf-8'))
             elif request.startswith("GET"):
                 _, file_id = request.split()

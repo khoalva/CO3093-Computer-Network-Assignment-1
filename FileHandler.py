@@ -44,20 +44,20 @@ class FileHandler:
         :param chunk_size: Size of each chunk in bytes (default is 8192).
         """
         self.filePath = file_path
-        self.fileName = os.path.basename(file_path)
         self.fileSize = self.get_file_size()
         self.fileHash = self.calculate_hash()
         self.chunkSize = chunk_size
         self.fileChunks = self.create_file_chunks()
-        self.fileID = self.generate_file_id(self.fileSize, self.fileHash)
+        self.totalChunks = self.getTotalChunks()
+        self.fileID = self.generate_file_id(self.fileSize, self.fileHash, self.totalChunks, self.chunkSize)
 
-    def generate_file_id(self, size, hashCode) -> str:
+    def generate_file_id(self, size, hashCode, numChunks, chunkSize) -> str:
         """
         Tạo ra fileID bằng cách kết hợp metadata như fileSize và fileHash.
         :return: Chuỗi fileID duy nhất.
         """
         # Tận dụng metadata để tạo fileID
-        metadata_str = f"{size}_{hashCode}"
+        metadata_str = f"{size}_{hashCode}_{numChunks}_{chunkSize}"
         return hashlib.sha256(metadata_str.encode()).hexdigest()
     def get_file_size(self) -> int:
         """Returns the file size in bytes."""
@@ -134,6 +134,8 @@ class FileHandler:
         else:
             print(f"File {fileID} not found in downloaded files.")
             return False
-
-
-
+    def combine(self):
+        pass
+    
+    def getTotalChunks(self):
+        return len(self.fileChunks)

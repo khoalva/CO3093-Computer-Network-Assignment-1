@@ -1,13 +1,12 @@
 import socket
-from FileHandler import FileHandler
 from Peer import Peer
+
 class User:
     def __init__(self, user_id, username, password):
         self.userID = user_id          # Unique ID for the user
         self.username = username       # Username for authentication
         self.password = password       # Password for authentication
-        peer_host, peer_port = self.get_ip_port()  # Get IP and port automatically
-        self.peer = Peer(peer_host=peer_host, peer_port=peer_port)  # Initialize peer
+        self.peerList = []  # Initialize peer list
 
     def register(self):
         pass
@@ -28,22 +27,25 @@ class User:
     # Request to upload a file (share)
     def upload_file(self, filePath):
         print(f"User {self.username} requests to upload file: {filePath}")
-        try:
-            file = FileHandler(file_path=filePath)
-        except:
-            raise "Error"
-        self.peer.share_file(file)
+
+        peer_host, peer_port = self.get_ip_port() 
+        peer = Peer(peer_host, peer_port)
+        self.peerList.append(peer)
+        peer.share_file(filePath)
 
     # Request to download a file
-    def download_file(self, fileID):
+    def download_file(self, fileID: str, totalChunks: int):
         print(f"User {self.username} requests to download file: {fileID}")
-        try:
-            self.peer.download_file(fileID)
-        except:
-            print("Download error!")
 
-    def stop_sharing(self, fileID):
-        self.peer.stop_sharing(fileID=fileID)
+        peer_host, peer_port = self.get_ip_port() 
+        print(peer_host, peer_port)
+        peer = Peer(peer_host, peer_port)
+        self.peerList.append(peer)
+        peer.download_file(fileID, totalChunks)
+
+
+    def stop(self, peerID):
+        self.peerList[peerID].stop_peer_server()
 
     def get_ip_port(self):
         """Lấy địa chỉ IP và tìm một cổng trống cho Peer."""
