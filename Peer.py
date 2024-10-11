@@ -155,6 +155,8 @@ class Peer:
 
             else:
                 print(f"Không tìm thấy peer có mảnh {rarest_chunk} hoặc tất cả đều bị choke.")
+        
+        self.combine_chunks()
 
     def generate_neighbor(self, fileID, ip, port):
         connection = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -200,6 +202,24 @@ class Peer:
         if not available_peers:
             return None  # Không có peer nào có mảnh tệp này
         return available_peers[0]  
+
+    def combine_chunks(self, output_file: str="Download.docx"):
+        """
+        Combine a list of FileChunk objects into a complete file.
+
+        :param file_chunks: List of FileChunk objects.
+        :param output_file: The path where the combined file will be saved.
+        """
+        # Sắp xếp các chunk dựa trên chunkID để đảm bảo thứ tự đúng
+        self.chunks.sort(key=lambda chunk: chunk.chunkID)
+
+        # Mở file output ở chế độ ghi nhị phân (binary mode)
+        with open(output_file, 'wb') as f:
+            for chunk in self.chunks:
+                # Ghi dữ liệu chunk vào file
+                f.write(chunk.to_bytes())
+
+        print(f"File has been successfully reconstructed and saved at: {output_file}")
 
     def verify_file_integrity(self, fileID: str):
         """Giả lập kiểm tra tính toàn vẹn của file sau khi tải xong."""

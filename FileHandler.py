@@ -136,8 +136,6 @@ class FileHandler:
         else:
             print(f"File {fileID} not found in downloaded files.")
             return False
-    def combine(self):
-        pass
-    
+
     def getTotalChunks(self):
         return len(self.fileChunks)
