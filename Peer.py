@@ -3,7 +3,7 @@ import socket
 from FileHandler import FileHandler, FileChunk
 import os
 import struct
-
+import os
 # TRACKER_HOST = '20.2.250.184'
 TRACKER_PORT = 5050
 TRACKER_HOST = 'localhost'
@@ -80,7 +80,7 @@ class Peer:
         self.fileID = file.fileID
         self.chunks = file.fileChunks
         self.bitField = [1] * file.getTotalChunks()
-
+        fileName = os.path.basename(filePath) 
         # Khởi động server P2P nếu chưa chạy
         self.start_peer_server()
 
@@ -90,7 +90,7 @@ class Peer:
             client_socket.connect((TRACKER_HOST, TRACKER_PORT))
             
             # Tạo request đăng ký chia sẻ file với Tracker Server
-            request = f"POST {file.fileID} {file.getTotalChunks()} {self.peerHost} {self.peerPort}"
+            request = f"POST {fileName} {file.fileID} {file.getTotalChunks()} {self.peerHost} {self.peerPort}"
             print(request)
             # Gửi request
             client_socket.sendall(request.encode())
@@ -117,19 +117,23 @@ class Peer:
         client_socket.connect((TRACKER_HOST, TRACKER_PORT))
         request = f"GET {fileID}"
         client_socket.sendall(request.encode())
-        response = client_socket.recv(1024).decode()        
-        print('List: \n',response)
-
+        response = client_socket.recv(1024).decode()     
+        #file_name = client_socket.recv(1024).decode()   
+        print('List: \n'.join([":".join(line.split(':')[1:]) for line in response.splitlines()]))
+        
         peers = response.split('\n')
         
 
         neighbors = []
+        file_name = ""
         for peer in peers:
-            ip, port = peer.split(':')
+            name, ip, port = peer.split(':')
+            file_name = name
             port = int(port)
             neighbor = self.generate_neighbor(self.fileID, ip, port)
             neighbors.append(neighbor)
-        
+
+
         while self.numDownloaded < self.totalChunks:
 
             neededChunks = self.get_needed_chunks()
@@ -162,7 +166,7 @@ class Peer:
             else:
                 print(f"Không tìm thấy peer có mảnh {rarest_chunk} hoặc tất cả đều bị choke.")
         
-        FileHandler.combine_chunks(self.chunks)
+        FileHandler.combine_chunks(self.chunks, file_name)
         self.verify_file_integrity(self.fileID)
 
     def generate_neighbor(self, fileID, ip, port):
