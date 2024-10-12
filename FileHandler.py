@@ -1,6 +1,6 @@
-
 import os
 import hashlib
+import struct
 
 class FileChunk:
     def __init__(self, chunkID: int, data: bytes):
@@ -35,16 +35,37 @@ class FileChunk:
         """
         return len(self.data)
     def to_bytes(self):
-        return bytes(self.data)
+        """
+        Convert the FileChunk instance to a bytes object.
+        The format will be: [chunkID (4 bytes)] + [data]
+        :return: A bytes object that contains the chunkID followed by the chunk data.
+        """
+        # Use struct to pack the chunkID (as 4 bytes) and append the data.
+        return struct.pack('!I', self.chunkID) + self.data
+    
+    @staticmethod
+    def from_bytes(byte_data: bytes):
+        """
+        Decode a bytes object back into a FileChunk instance.
+        Expects the format: [chunkID (4 bytes)] + [data]
+        :param byte_data: A bytes object that contains the chunkID followed by the chunk data.
+        :return: A FileChunk instance.
+        """
+        # Extract the first 4 bytes as the chunkID, and the rest as the data.
+        chunkID = struct.unpack('!I', byte_data[:4])[0]
+        data = byte_data[4:]
+        return FileChunk(chunkID, data)
 
 
 class FileHandler:
-    def __init__(self, file_path: str, chunk_size: int = 8192):
+    def __init__(self, file_path: str,  chunk_size: int = 8192):
         """
         Initialize the File class with a file path and chunk size.
         :param file_path: Path to the file on the local system.
         :param chunk_size: Size of each chunk in bytes (default is 8192).
         """
+        fileName =  os.path.basename(file_path)
+        self.fileName = fileName
         self.filePath = file_path
         self.fileSize = self.get_file_size()
         self.fileHash = self.calculate_hash()
@@ -94,6 +115,7 @@ class FileHandler:
                     chunk_id += 1
         except OSError:
             raise FileNotFoundError(f"Unable to open file: {self.filePath}")
+        chunks.sort(key=lambda chunk: chunk.chunkID)
         return chunks
 
     def get_metadata(self) -> dict:
@@ -119,23 +141,29 @@ class FileHandler:
         """Returns a list of all file chunks."""
         return self.fileChunks
 
-    
-    def verify_file_integrity(self, fileID: str) -> bool:
-        """Verify the integrity of the downloaded file using the hash."""
-        if fileID in self.downloadedFiles:
-            file = self.downloadedFiles[fileID]
-            expected_hash = file.fileHash
-            actual_hash = file.calculate_hash()
-
-            if expected_hash == actual_hash:
-                print(f"File {fileID} integrity verified.")
-                return True
-            else:
-                print(f"File {fileID} integrity check failed!")
-                return False
-        else:
-            print(f"File {fileID} not found in downloaded files.")
-            return False
-
     def getTotalChunks(self):
         return len(self.fileChunks)
+
+    @staticmethod
+    def combine_chunks(chunks, output_file: str="download.txt"):
+        """
+        Combine a list of FileChunk objects into a complete file.
+
+        :param file_chunks: List of FileChunk objects.
+        :param output_file: The path where the combined file will be saved.
+        """
+        # Sắp xếp các chunk dựa trên chunkID để đảm bảo thứ tự đúng
+        chunks.sort(key=lambda chunk: chunk.chunkID)
+
+        # Mở file output ở chế độ ghi nhị phân (binary mode)
+        with open(output_file, 'wb') as f:
+            for chunk in chunks:
+                # Ghi dữ liệu chunk vào file
+                f.write(chunk.data)
+        
+        print(f"File has been successfully reconstructed and saved at: {output_file}")
+
+
+# file = FileHandler('test.txt')
+# file.combine_chunks(file.fileChunks, 'test2.txt')
+

@@ -1,8 +1,7 @@
 import threading
 import socket
 from FileHandler import FileHandler, FileChunk
-import random
-import time
+import os
 import struct
 
 # TRACKER_HOST = '20.2.250.184'
@@ -63,8 +62,11 @@ class Peer:
                 # Kiểm tra xem fileID có trong danh sách chia sẻ và chunk đã được tải chưa
                 if fileID == self.fileID and self.bitField[chunk_num] == 1:
                     # Nếu chunk đã tải, gửi chunk tương ứng
-                    conn.sendall(self.chunks[chunk_num].to_bytes())
-                    print(f"Sent chunk {chunk_num} of file {fileID} to {addr}")
+                    if self.chunks[chunk_num].chunkID == chunk_num:
+                        conn.sendall(self.chunks[chunk_num].to_bytes())
+                        print(f"Sent chunk {chunk_num} of file {fileID} to {addr}")
+                    else:
+                        print("Some thing error")
                 else:
                     # Nếu chunk chưa được tải hoặc file không có, báo lỗi
                     conn.sendall(b"Chunk not available or file not shared.")
@@ -94,7 +96,7 @@ class Peer:
             client_socket.sendall(request.encode())
             
             # Nhận phản hồi từ server
-            response = client_socket.recv(1024).decode()
+            response = client_socket.recv(8192).decode()
             print("Response from server:", response)
         
         finally:
@@ -145,7 +147,11 @@ class Peer:
                 
                 request = f'GET {self.fileID} {rarest_chunk}'
                 conn.sendall(request.encode())
-                file_chunk = FileChunk(rarest_chunk, conn.recv(1024))
+                chunk = FileChunk.from_bytes(conn.recv(16384))
+                if rarest_chunk == chunk.chunkID:
+                    file_chunk = FileChunk(rarest_chunk, chunk.data)
+                else:
+                    print("error chunk")
                 
                 # Kiểm tra tính toàn vẹn của mảnh tệp (giả lập kiểm tra hash)
                 self.numDownloaded = self.numDownloaded + 1
@@ -156,7 +162,8 @@ class Peer:
             else:
                 print(f"Không tìm thấy peer có mảnh {rarest_chunk} hoặc tất cả đều bị choke.")
         
-        self.combine_chunks()
+        FileHandler.combine_chunks(self.chunks)
+        self.verify_file_integrity(self.fileID)
 
     def generate_neighbor(self, fileID, ip, port):
         connection = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -203,23 +210,6 @@ class Peer:
             return None  # Không có peer nào có mảnh tệp này
         return available_peers[0]  
 
-    def combine_chunks(self, output_file: str="Download.docx"):
-        """
-        Combine a list of FileChunk objects into a complete file.
-
-        :param file_chunks: List of FileChunk objects.
-        :param output_file: The path where the combined file will be saved.
-        """
-        # Sắp xếp các chunk dựa trên chunkID để đảm bảo thứ tự đúng
-        self.chunks.sort(key=lambda chunk: chunk.chunkID)
-
-        # Mở file output ở chế độ ghi nhị phân (binary mode)
-        with open(output_file, 'wb') as f:
-            for chunk in self.chunks:
-                # Ghi dữ liệu chunk vào file
-                f.write(chunk.to_bytes())
-
-        print(f"File has been successfully reconstructed and saved at: {output_file}")
 
     def verify_file_integrity(self, fileID: str):
         """Giả lập kiểm tra tính toàn vẹn của file sau khi tải xong."""
