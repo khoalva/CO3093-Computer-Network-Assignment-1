@@ -145,7 +145,7 @@ class FileHandler:
         return len(self.fileChunks)
 
     @staticmethod
-    def combine_chunks(chunks, output_file: str="download.txt"):
+    def combine_chunks(chunks, output_file: str="download.docx"):
         """
         Combine a list of FileChunk objects into a complete file.
 
